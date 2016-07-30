@@ -184,7 +184,7 @@ static int xio_post_send(struct xio_rdma_transport *rdma_hndl,
 			  rdma_hndl->sqe_avail);
 	}
 	rdma_hndl->sqe_avail -= nr_posted;
-
+	pr_info("%s called, wr=%p, nr_posted=%d\n", __func__, &xio_send->send_wr, nr_posted);
 	return retval;
 }
 

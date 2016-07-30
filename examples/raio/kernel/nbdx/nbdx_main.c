@@ -119,6 +119,8 @@ int nbdx_transfer(struct nbdx_file *xdev, char *buffer, unsigned long start,
 
 	pr_debug("%s,%d: start=0x%lx, len=0x%lx opcode=%d\n",
 		 __func__, __LINE__, start, len, io_u->iocb.raio_lio_opcode);
+	pr_info("%s,%d: start=0x%lx, len=0x%lx opcode=%d\n",
+		 __func__, __LINE__, start, len, io_u->iocb.raio_lio_opcode);
 
 	if (io_u->iocb.raio_lio_opcode == RAIO_CMD_PWRITE) {
 		io_u->req.out.data_tbl.sgl = io_u->sgl;
@@ -159,6 +161,7 @@ int nbdx_transfer(struct nbdx_file *xdev, char *buffer, unsigned long start,
 		nbdx_conn = nbdx_conn->nbdx_sess->nbdx_conns[cpu];
 	}
 	pr_debug("sending req on conn %d\n", nbdx_conn->cpu_id);
+	pr_info("sending req on conn %d\n", nbdx_conn->cpu_id);
 	retval = xio_send_request(nbdx_conn->conn, &io_u->req);
 	put_cpu();
 	if (unlikely(retval)) {
@@ -232,6 +235,9 @@ static void on_submit_answer(struct nbdx_connection *nbdx_conn,
 			io_u->iocb.raio_fildes, io_u->res, io_u->res2,
 			io_u->ans.ret, io_u->ans.ret_errno);
 
+	pr_info("fd=%d, res=%x, res2=%x, ans.ret=%d, ans.ret_errno=%d\n",
+			io_u->iocb.raio_fildes, io_u->res, io_u->res2,
+			io_u->ans.ret, io_u->ans.ret_errno);
 	ret = -io_u->ans.ret;
 	if (unlikely(ret)) {
 		struct nbdx_file *xdev = io_u->breq->rq_disk->private_data;
