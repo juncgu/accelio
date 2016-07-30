@@ -609,6 +609,7 @@ static int on_cmd_submit_comp(struct raio_io_cmd *iocmd)
 	struct raio_io_u	*io_u = (struct raio_io_u *)iocmd->user_context;
 	struct xio_iovec_ex	*sglist;
 	struct raio_answer	ans = { RAIO_CMD_IO_SUBMIT, 0, 0, 0 };
+        char* buffer2 = (char*)malloc(4097);
 
 	pack_u32((uint32_t *)&iocmd->res2,
 	pack_u32((uint32_t *)&iocmd->res,
@@ -617,6 +618,13 @@ static int on_cmd_submit_comp(struct raio_io_cmd *iocmd)
 	pack_u32(&ans.data_len,
 	pack_u32(&ans.command,
 	(char *)io_u->rsp->out.header.iov_base))))));
+
+        //Jun: try to print iocmd buf
+        buffer2[4096] = '\0';
+        memcpy(buffer2, iocmd->buf, 4096);
+        printf("%s, iocmd->buf: %s\n", __func__, buffer2);
+        free(buffer2);
+
 
 	io_u->rsp->out.header.iov_len = sizeof(struct raio_answer) +
 					2 * sizeof(uint32_t);
@@ -669,6 +677,8 @@ static int raio_handle_submit(void *prv_session_data,
 	char				*rsp_hdr;
 	struct xio_msg			*rsp;
 
+	char* buffer2 = (char*)malloc(4097);
+
 	if (unlikely(msg_sz != cmd->data_len)) {
 		retval = EINVAL;
 		printf("io submit request rejected\n");
@@ -712,6 +722,13 @@ static int raio_handle_submit(void *prv_session_data,
 		io_u->iocmd.buf		= sglist[0].iov_base;
 		io_u->iocmd.mr		= sglist[0].mr;
 	}
+
+
+        //Jun: try to print iocmd buf
+        buffer2[4096] = '\0';
+        memcpy(buffer2, io_u->iocmd.buf, 4096);
+        printf("%s, iocmd->buf: %s\n", __func__, buffer2);
+        free(buffer2);
 
 	io_u->iocmd.fsize		= bs_dev->stbuf.st_size;
 	io_u->iocmd.offset		= iocb.u.c.offset;
