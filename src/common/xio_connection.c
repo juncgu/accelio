@@ -1101,7 +1101,7 @@ int xio_send_request(struct xio_connection *connection,
 		pmsg = pmsg->next;
 	}
 	if (nr > 0)
-		xio_msg_list_concat(&connection->reqs_msgq, &reqs_msgq, pdata);
+		xio_msg_list_concat(&connection->reqs_msgq, &reqs_msgq, pdata); //attach sec_queue to the first_queue
 
 send:
 	/* do not xmit until connection is assigned */

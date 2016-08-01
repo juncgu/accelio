@@ -353,7 +353,7 @@ static void priv_ev_loop_run_thread(struct xio_ev_loop *loop)
 		clear_bit(XIO_EV_LOOP_ACTIVE, &loop->states);
 		return;
 	}
-
+	pr_info("%s:%d, 1\n", __func__, __LINE__);
 	/* loop can stopped and restarted, thus old events can be pending in
 	 * order in the (first - last) list or new events (in reverse order)
 	 * are queued in ev_llsits
@@ -372,14 +372,16 @@ retry_wait:
 
 	if (unlikely(test_bit(XIO_EV_LOOP_STOP, &loop->states)))
 		goto stopped;
-
+	pr_info("%s:%d, retry_wait\n", __func__, __LINE__);
 retry_dont_wait:
 
 	while ((last = llist_del_all(&loop->ev_llist)) != NULL) {
+		pr_info("%s:%d, retry_dont_wait 1\n", __func__, __LINE__);
 		first = llist_reverse_order(last);
 		xio_append_ordered(first, last, loop);
 		node = loop->first;
 		while (node) {
+			pr_info("%s:%d, retry_dont_wait 2\n", __func__, __LINE__);
 			tev = llist_entry(node, struct xio_ev_data, ev_llist);
 			node = llist_next(node);
 			loop->first = node;
@@ -410,13 +412,17 @@ retry_dont_wait:
 	 * an event was added and loop was resumed,
 	 * than wait event might block forever as condition is false
 	 */
-	if (llist_empty(&loop->ev_llist))
+	if (llist_empty(&loop->ev_llist)){
+		pr_info("%s:%d, goto retry_wait1\n", __func__, __LINE__);
 		goto retry_wait;
-
-	if (test_and_set_bit(XIO_EV_LOOP_WAKE, &loop->states))
+	}
+	if (test_and_set_bit(XIO_EV_LOOP_WAKE, &loop->states)){
+		pr_info("%s:%d, goto retry_wait2\n", __func__, __LINE__);
 		goto retry_wait; /* bit is set add_event did set it  */
-	else
+	}else{
+		pr_info("%s:%d, goto retry_dont_wait\n", __func__, __LINE__);
 		goto retry_dont_wait; /* add_event will not call wake up */
+	}
 
 stopped:
 	clear_bit(XIO_EV_LOOP_WAKE, &loop->states);

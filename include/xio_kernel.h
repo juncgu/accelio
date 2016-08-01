@@ -137,7 +137,7 @@ struct xio_msg {
 	uint64_t		hints;		/**< hints flags from library */
 						/**< to application	      */
 
-	struct xio_msg_pdata	pdata;		/**< accelio private data     */
+	struct xio_msg_pdata	pdata;		/**< accelio private data  .just next and prev pointer   */
 	struct xio_msg		*next;          /* internal use */
 };
 
