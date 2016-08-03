@@ -807,10 +807,11 @@ struct file* file_open(const char* path, int flags, int rights) {
 
     oldfs = get_fs();
     set_fs(get_ds());
-    filp = filp_open(path, flags, rights);
+    filp = filp_open(path, rights, flags);
     set_fs(oldfs);
     if(IS_ERR(filp)) {
         err = PTR_ERR(filp);
+        pr_info("%s gets error\n");
         return NULL;
     }
     return filp;
