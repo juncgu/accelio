@@ -117,7 +117,7 @@ static int nbdx_request(struct request *req, struct nbdx_queue *xq)
 	int err;
 	void* buffer = bio_data(req->bio);
 
-	pr_debug("%s called\n", __func__);
+	//pr_debug("%s called\n", __func__);
 
 	xdev = req->rq_disk->private_data;
 
@@ -143,7 +143,7 @@ static int nbdx_queue_rq(struct blk_mq_hw_ctx *hctx, struct request *rq)
 	struct request *rq = bd->rq;
 #endif
 
-	pr_debug("%s called\n", __func__);
+	//pr_debug("%s called\n", __func__);
 
 	nbdx_q = hctx->driver_data;
 	err = nbdx_request(rq, nbdx_q);
@@ -259,9 +259,10 @@ void nbdx_destroy_queues(struct nbdx_file *xdev)
 
 int nbdx_register_block_device(struct nbdx_file *nbdx_file)
 {
-	sector_t size = nbdx_file->stbuf.st_size;
 	int page_size = PAGE_SIZE;
 	int err = 0;
+	sector_t size = CHUNK_SIZE * NUM_CHUNK;
+	nbdx_file->stbuf.st_size = CHUNK_SIZE * NUM_CHUNK;
 
 	pr_debug("%s called\n", __func__);
 

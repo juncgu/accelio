@@ -392,7 +392,8 @@ retry_dont_wait:
 				start_time = jiffies;
 			}
 			if (test_bit(XIO_EV_HANDLER_ENABLED, &tev->states))
-				tev->handler(tev->data);
+				//Jun: I guese this is the place callback handler is called, and event is propagated to upper level.
+				tev->handler(tev->data);   
 			clear_bit(XIO_EV_LOOP_IN_HANDLER, &loop->states);
 		}
 		loop->last = NULL;

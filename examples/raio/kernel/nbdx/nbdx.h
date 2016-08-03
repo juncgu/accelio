@@ -71,6 +71,8 @@
 #define NBDX_SECT_SIZE	    512
 #define NBDX_SECT_SHIFT	    ilog2(NBDX_SECT_SIZE)
 #define NBDX_QUEUE_DEPTH    64
+#define CHUNK_SIZE    (128 * 1024)	
+#define NUM_CHUNK     1024
 
 enum nbdx_dev_state {
 	DEVICE_INITIALIZING,
@@ -91,7 +93,14 @@ struct nbdx_connection {
 	wait_queue_head_t	wq;
 };
 
+struct mem_pool{
+	char **mem;
+	uint32_t num_chunk;	
+};
+
+
 struct nbdx_session {
+	struct mem_pool		 mem_p;
 	struct xio_session	     *session;
 	struct nbdx_connection	    **nbdx_conns;
 	char			      portal[MAX_PORTAL_NAME];

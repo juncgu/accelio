@@ -100,6 +100,10 @@ int nbdx_transfer(struct nbdx_file *xdev, char *buffer, unsigned long start,
 		  unsigned long len, int write, struct request *req,
 		  struct nbdx_queue *q)
 {
+	int chunk_id;
+	int offset;
+	char *start_addr;
+	int ret = 0;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
 	struct raio_io_u *io_u = blk_mq_rq_to_pdu(req);
 #else
@@ -117,10 +121,8 @@ int nbdx_transfer(struct nbdx_file *xdev, char *buffer, unsigned long start,
 	else
 		raio_prep_pread(&io_u->iocb, xdev->fd, start);
 
-	pr_debug("%s,%d: start=0x%lx, len=0x%lx opcode=%d\n",
-		 __func__, __LINE__, start, len, io_u->iocb.raio_lio_opcode);
-	pr_info("%s,%d: start=0x%lx, len=0x%lx opcode=%d\n",
-		 __func__, __LINE__, start, len, io_u->iocb.raio_lio_opcode);
+	//pr_debug("%s,%d: start=0x%lx, len=0x%lx opcode=%d\n", __func__, __LINE__, start, len, io_u->iocb.raio_lio_opcode);
+	//pr_info("%s,%d: start=0x%lx, len=0x%lx opcode=%d\n", __func__, __LINE__, start, len, io_u->iocb.raio_lio_opcode);
 
 	if (io_u->iocb.raio_lio_opcode == RAIO_CMD_PWRITE) {
 		io_u->req.out.data_tbl.sgl = io_u->sgl;
@@ -160,14 +162,35 @@ int nbdx_transfer(struct nbdx_file *xdev, char *buffer, unsigned long start,
 			 cpu, nbdx_conn->cpu_id);
 		nbdx_conn = nbdx_conn->nbdx_sess->nbdx_conns[cpu];
 	}
-	pr_debug("sending req on conn %d\n", nbdx_conn->cpu_id);
-	pr_info("sending req on conn %d\n", nbdx_conn->cpu_id);
-	retval = xio_send_request(nbdx_conn->conn, &io_u->req);
+	//pr_debug("sending req on conn %d\n", nbdx_conn->cpu_id);
+	//pr_info("sending req on conn %d\n", nbdx_conn->cpu_id);
+	//retval = xio_send_request(nbdx_conn->conn, &io_u->req);
+	if (start >= CHUNK_SIZE * NUM_CHUNK){
+		pr_err("%s, start is out of the size\n", __func__);
+		return 0;
+	}
+	if (write){
+		chunk_id = start / CHUNK_SIZE;
+		offset = start % CHUNK_SIZE;
+		start_addr = nbdx_conn->nbdx_sess->mem_p.mem[chunk_id] + offset;
+		memcpy(start_addr, req->buffer, len);
+	}else{
+		chunk_id = start / CHUNK_SIZE;
+		offset = start % CHUNK_SIZE;
+		start_addr = nbdx_conn->nbdx_sess->mem_p.mem[chunk_id] + offset;
+		memcpy(req->buffer, start_addr, len);
+	}
 	put_cpu();
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+	blk_mq_end_request(req, ret);
+#else
+	blk_mq_end_io(req, ret);
+#endif	
+	/*
 	if (unlikely(retval)) {
 		pr_err("failed xio_send_request ret=%d\n", retval);
 		goto err;
-	}
+	}*/
 
 err:
 	return retval;
@@ -778,6 +801,12 @@ int nbdx_session_create(const char *portal, struct nbdx_session *nbdx_session)
 		pr_err("failed to allocate nbdx connections array\n");
 		ret = -ENOMEM;
 		goto err_destroy_portal;
+	}
+
+	nbdx_session->mem_p.num_chunk = NUM_CHUNK;
+	nbdx_session->mem_p.mem = (char**)kmalloc(sizeof(char*) * NUM_CHUNK, GFP_KERNEL);
+	for (i=0; i<NUM_CHUNK; i++){
+		nbdx_session->mem_p.mem[i] = kzalloc(CHUNK_SIZE, GFP_KERNEL);	
 	}
 
 	init_completion(&nbdx_session->conns_wait);
