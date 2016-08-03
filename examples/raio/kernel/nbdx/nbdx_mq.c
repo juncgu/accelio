@@ -261,8 +261,7 @@ int nbdx_register_block_device(struct nbdx_file *nbdx_file)
 {
 	int page_size = PAGE_SIZE;
 	int err = 0;
-	sector_t size = CHUNK_SIZE * NUM_CHUNK;
-	nbdx_file->stbuf.st_size = CHUNK_SIZE * NUM_CHUNK;
+	sector_t size = nbdx_file->stbuf.st_size;
 
 	pr_debug("%s called\n", __func__);
 

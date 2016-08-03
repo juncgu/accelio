@@ -96,6 +96,33 @@ out:
 	return ret;
 }
 
+int file_read(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size) {
+    mm_segment_t oldfs;
+    int ret;
+
+    oldfs = get_fs();
+    set_fs(get_ds());
+
+    ret = vfs_read(file, data, size, &offset);
+    //printk("%s\n", data);
+
+    set_fs(oldfs);
+    return ret;
+}
+
+int file_write(struct file* file, unsigned long long offset, unsigned char* data, unsigned int size) {
+    mm_segment_t oldfs;
+    int ret;
+
+    oldfs = get_fs();
+    set_fs(get_ds());
+
+    ret = vfs_write(file, data, size, &offset);
+    
+   	set_fs(oldfs);
+    return ret;
+}
+
 int nbdx_transfer(struct nbdx_file *xdev, char *buffer, unsigned long start,
 		  unsigned long len, int write, struct request *req,
 		  struct nbdx_queue *q)
@@ -165,20 +192,16 @@ int nbdx_transfer(struct nbdx_file *xdev, char *buffer, unsigned long start,
 	//pr_debug("sending req on conn %d\n", nbdx_conn->cpu_id);
 	//pr_info("sending req on conn %d\n", nbdx_conn->cpu_id);
 	//retval = xio_send_request(nbdx_conn->conn, &io_u->req);
-	if (start >= CHUNK_SIZE * NUM_CHUNK){
+	if (start >= FILE_SIZE){
 		pr_err("%s, start is out of the size\n", __func__);
 		return 0;
 	}
 	if (write){
-		chunk_id = start / CHUNK_SIZE;
-		offset = start % CHUNK_SIZE;
-		start_addr = nbdx_conn->nbdx_sess->mem_p.mem[chunk_id] + offset;
-		memcpy(start_addr, req->buffer, len);
+		file_write(nbdx_conn->nbdx_sess->fd, start, req->buffer, len);
+		//memcpy(start_addr, req->buffer, len);
 	}else{
-		chunk_id = start / CHUNK_SIZE;
-		offset = start % CHUNK_SIZE;
-		start_addr = nbdx_conn->nbdx_sess->mem_p.mem[chunk_id] + offset;
-		memcpy(req->buffer, start_addr, len);
+		file_read(nbdx_conn->nbdx_sess->fd, start, req->buffer, len);
+		//memcpy(req->buffer, start_addr, len);
 	}
 	put_cpu();
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
@@ -643,6 +666,7 @@ void nbdx_destroy_device(struct nbdx_session *nbdx_session,
 {
 	pr_debug("%s\n", __func__);
 
+	filp_close(nbdx_session->fd, NULL);
 	nbdx_set_device_state(nbdx_file, DEVICE_OFFLINE);
 	if (nbdx_file->disk){
 		nbdx_unregister_block_device(nbdx_file);
@@ -776,6 +800,22 @@ static int nbdx_create_conn(struct nbdx_session *nbdx_session, int cpu,
 	return 0;
 }
 
+struct file* file_open(const char* path, int flags, int rights) {
+    struct file* filp = NULL;
+    mm_segment_t oldfs;
+    int err = 0;
+
+    oldfs = get_fs();
+    set_fs(get_ds());
+    filp = filp_open(path, flags, rights);
+    set_fs(oldfs);
+    if(IS_ERR(filp)) {
+        err = PTR_ERR(filp);
+        return NULL;
+    }
+    return filp;
+}
+
 int nbdx_session_create(const char *portal, struct nbdx_session *nbdx_session)
 {
 	struct xio_session_params params;
@@ -803,11 +843,15 @@ int nbdx_session_create(const char *portal, struct nbdx_session *nbdx_session)
 		goto err_destroy_portal;
 	}
 
+	nbdx_session->fd = file_open("/ramcache/swapfile", 0, O_RDWR);
+
+	/*
 	nbdx_session->mem_p.num_chunk = NUM_CHUNK;
 	nbdx_session->mem_p.mem = (char**)kmalloc(sizeof(char*) * NUM_CHUNK, GFP_KERNEL);
 	for (i=0; i<NUM_CHUNK; i++){
 		nbdx_session->mem_p.mem[i] = kzalloc(CHUNK_SIZE, GFP_KERNEL);	
 	}
+	*/
 
 	init_completion(&nbdx_session->conns_wait);
 	atomic_set(&nbdx_session->conns_count, 0);

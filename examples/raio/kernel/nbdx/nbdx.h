@@ -59,6 +59,11 @@
 #include <linux/cpumask.h>
 #include <linux/configfs.h>
 
+#include <linux/fs.h>
+#include <asm/segment.h>
+#include <asm/uaccess.h>
+#include <linux/buffer_head.h>
+
 #include "libxio.h"
 #include "raio_kutils.h"
 #include "raio_kbuffer.h"
@@ -73,6 +78,7 @@
 #define NBDX_QUEUE_DEPTH    64
 #define CHUNK_SIZE    (128 * 1024)	
 #define NUM_CHUNK     1024
+#define FILE_SIZE		1073741824
 
 enum nbdx_dev_state {
 	DEVICE_INITIALIZING,
@@ -101,6 +107,7 @@ struct mem_pool{
 
 struct nbdx_session {
 	struct mem_pool		 mem_p;
+	struct file 	*fd;
 	struct xio_session	     *session;
 	struct nbdx_connection	    **nbdx_conns;
 	char			      portal[MAX_PORTAL_NAME];
