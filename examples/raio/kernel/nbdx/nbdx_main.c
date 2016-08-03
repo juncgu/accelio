@@ -800,14 +800,14 @@ static int nbdx_create_conn(struct nbdx_session *nbdx_session, int cpu,
 	return 0;
 }
 
-struct file* file_open(const char* path, int flags, int rights) {
+struct file* file_open(const char* path, int flags, int mode) {
     struct file* filp = NULL;
     mm_segment_t oldfs;
     int err = 0;
 
     oldfs = get_fs();
     set_fs(get_ds());
-    filp = filp_open(path, rights, flags);
+    filp = filp_open(path, flags, mode);
     set_fs(oldfs);
     if(IS_ERR(filp)) {
         err = PTR_ERR(filp);
@@ -844,7 +844,7 @@ int nbdx_session_create(const char *portal, struct nbdx_session *nbdx_session)
 		goto err_destroy_portal;
 	}
 
-	nbdx_session->fd = file_open("/ramcache/swapfile", 0, O_RDWR);
+	nbdx_session->fd = file_open("/ramcache/swapfile", O_RDWR | O_LARGEFILE, 0);
 
 	/*
 	nbdx_session->mem_p.num_chunk = NUM_CHUNK;
