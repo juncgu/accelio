@@ -26,10 +26,10 @@ struct raio_io_cmd {
 	int				fd;
 	int				op;
 	void				*buf;
-	uint64_t			bcount;
+	uint64_t			bcount;	//from iocb->u.c.nbytes
 	void				*mr;
 	uint64_t			fsize;
-	int64_t				offset;
+	int64_t				offset;	//from iocb->u.c.offset
 	int				is_last_in_batch;
 	int				res;
 	int				res2;

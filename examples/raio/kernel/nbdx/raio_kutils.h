@@ -114,8 +114,8 @@ enum raio_iocb_cmd {
 
 struct raio_iocb_common {
 	void			*buf;
-	unsigned long long	nbytes;
-	long long		offset;
+	unsigned long long	nbytes;  //how many data is required
+	long long		offset;	//the start addr
 	unsigned int		flags;
 	unsigned int		resfd;
 };	/* result code is the amount read or negative errno */

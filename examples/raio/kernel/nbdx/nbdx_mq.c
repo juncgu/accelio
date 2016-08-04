@@ -115,7 +115,9 @@ static int nbdx_request(struct request *req, struct nbdx_queue *xq)
 {
 	struct nbdx_file *xdev;
 	unsigned long start = blk_rq_pos(req) << NBDX_SECT_SHIFT;
-	unsigned long len  = blk_rq_cur_bytes(req);
+	//blk_rq_cur_bytes: Returns bytes left to complete in the current segment
+	//unsigned long len  = blk_rq_cur_bytes(req);
+	unsigned long len  = blk_rq_bytes(req);
 	int write = rq_data_dir(req) == WRITE;
 	int err;
 	void* buffer = bio_data(req->bio);

@@ -111,6 +111,7 @@ static void raio_aio_iocb_prep(struct raio_bs_aio_info *info, int idx,
 {
 	struct iocb *iocb = &info->iocb_arr[idx];
 
+	//Jun: put nbyte, offset into a icb
 	switch (cmd->op) {
 	case RAIO_CMD_PREAD:
 		/*
