@@ -54,7 +54,7 @@ int nbdx_rq_map_sg(struct request *rq, struct xio_vmsg *vmsg,
 
 	*len = blk_rq_bytes(rq);
 	if (vmsg->data_tbl.nents != 1 || rq->nr_phys_segments != 1){
-		pr_info("%s, nents=%d, phys_seg=%d, total_len=%d\n", __func__, vmsg->data_tbl.nents, rq->nr_phys_segments, len);
+		pr_info("%s, nents=%d, phys_seg=%d, total_len=%d\n", __func__, vmsg->data_tbl.nents, rq->nr_phys_segments, *len);
 	}
 
 	return 0;
